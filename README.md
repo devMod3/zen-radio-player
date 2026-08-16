@@ -48,6 +48,12 @@ La demostración y Blogger cargan el mismo Web Component aislado mediante Shadow
 
 También puede abrirse desde cualquier botón existente mediante `window.ZenRadioPlayer.open()`.
 
+Los menús de Blogger que solo aceptan una URL pueden usar un enlace al propio blog terminado en `#zen-radio-player`. El componente intercepta ese enlace y abre el reproductor sin abandonar la página:
+
+```text
+https://TU-BLOG.blogspot.com/#zen-radio-player
+```
+
 ## Alcance pendiente
 
 - lectura y normalización completa de metadatos HLS/ID3/ICY;
