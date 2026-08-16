@@ -3,6 +3,7 @@ import ZenRadioPlayer, { ZEN_PLAYER_OPEN_EVENT } from "../app/components/ZenRadi
 import playerCss from "../app/player.css?inline";
 
 const ELEMENT_NAME = "zen-radio-player";
+const OPEN_HASH = "#zen-radio-player";
 const DEFAULT_PLAYLIST_ENDPOINT = "https://zuma-radio-player.major-oasis-8708.chatgpt.site/api/playlist";
 const loader = Array.from(document.scripts).find((script) => script.src === import.meta.url);
 const configuredEndpoint = loader?.dataset.playlistEndpoint || DEFAULT_PLAYLIST_ENDPOINT;
@@ -49,17 +50,33 @@ function openPlayer() {
   window.dispatchEvent(new Event(ZEN_PLAYER_OPEN_EVENT));
 }
 
+function findOpenTrigger(target: EventTarget | null) {
+  const trigger = target instanceof Element
+    ? target.closest<HTMLElement>("[data-zen-radio-open], a[href]")
+    : null;
+  if (!trigger) return null;
+  if (trigger.hasAttribute("data-zen-radio-open")) return trigger;
+  if (!(trigger instanceof HTMLAnchorElement)) return null;
+  const url = new URL(trigger.href, window.location.href);
+  return url.origin === window.location.origin && url.hash === OPEN_HASH ? trigger : null;
+}
+
+function openFromHash() {
+  if (window.location.hash === OPEN_HASH) openPlayer();
+}
+
 function bootstrap() {
   if (window.__zenRadioPlayerBootstrapped) return;
   window.__zenRadioPlayerBootstrapped = true;
   if (!customElements.get(ELEMENT_NAME)) customElements.define(ELEMENT_NAME, ZenRadioPlayerElement);
   getOrCreatePlayer();
   document.addEventListener("click", (event) => {
-    const target = event.target instanceof Element ? event.target.closest("[data-zen-radio-open]") : null;
-    if (!target) return;
+    if (!findOpenTrigger(event.target)) return;
     event.preventDefault();
     openPlayer();
   });
+  window.addEventListener("hashchange", openFromHash);
+  if (window.location.hash === OPEN_HASH) window.setTimeout(openFromHash, 0);
   window.ZenRadioPlayer = Object.freeze({ version: "1.0", open: openPlayer });
 }
 

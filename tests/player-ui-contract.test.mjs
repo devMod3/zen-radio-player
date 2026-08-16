@@ -67,11 +67,19 @@ test("builds the reusable Blogger surface as an isolated custom element", () => 
   assert.match(embed, /const ELEMENT_NAME = "zen-radio-player"/);
   assert.match(embed, /attachShadow\(\{ mode: "open" \}\)/);
   assert.match(embed, /style\.textContent = playerCss/);
-  assert.match(embed, /target\.closest\("\[data-zen-radio-open\]"\)/);
+  assert.match(embed, /target\.closest<HTMLElement>\("\[data-zen-radio-open\], a\[href\]"\)/);
   assert.match(embed, /window\.ZenRadioPlayer = Object\.freeze\(\{ version: "1\.0", open: openPlayer \}\)/);
   assert.match(pages, /data-zen-radio-open/);
   assert.match(pages, /src="https:\/\/devmod3\.github\.io\/zen-radio-player\/assets\/zen-radio-player\.js"/);
   assert.doesNotMatch(pages, /main\.tsx|id="root"/);
+});
+
+test("opens from Blogger page-list links without coupling to its template", () => {
+  assert.match(embed, /const OPEN_HASH = "#zen-radio-player"/);
+  assert.match(embed, /trigger\.hasAttribute\("data-zen-radio-open"\)/);
+  assert.match(embed, /url\.origin === window\.location\.origin && url\.hash === OPEN_HASH/);
+  assert.match(embed, /window\.addEventListener\("hashchange", openFromHash\)/);
+  assert.match(embed, /window\.location\.hash === OPEN_HASH\) window\.setTimeout\(openFromHash, 0\)/);
 });
 
 test("allows read-only playlist synchronization from external sites", () => {
