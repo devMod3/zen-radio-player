@@ -1,12 +1,12 @@
 # Zen Radio Player 1.0
 
-Reproductor personal de radio web con interfaz institucional y editor local de playlists.
+Es un reproductor web
 
 El reproductor público está limitado a sus superficies funcionales: barra de reproducción, playlist lateral y panel informativo. Se superpone al sitio anfitrión sin sustituir ni bloquear su contenido.
 
 ## Incluye
 
-- 37 emisoras importadas desde la lista M3U original.
+- Contenido importado desde la lista M3U original.
 - reproducción nativa de MP3/AAC/streams;
 - reproducción HLS mediante hls.js con fallback nativo en Safari;
 - playlist pública sin controles administrativos;
