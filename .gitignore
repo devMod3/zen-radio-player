@@ -36,7 +36,11 @@ yarn-error.log*
 # typescript
 next-env.d.ts
 /dist/
+/dist-pages/
 /.wrangler/
 /.sites-runtime/
 /outputs/
 /work/
+__pycache__/
+*.pyc
+.zen-admin-secret

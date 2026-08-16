@@ -1,13 +1,15 @@
-# Zen Radio Player — MVP 0.1
+# Zen Radio Player 1.0
 
-Reproductor personal de radio con interfaz institucional y editor local de playlists.
+Reproductor personal de radio web con interfaz institucional y editor local de playlists.
+
+El reproductor público está limitado a sus superficies funcionales: barra de reproducción, playlist lateral y panel informativo. Se superpone al sitio anfitrión sin sustituir ni bloquear su contenido.
 
 ## Incluye
 
 - 37 emisoras importadas desde la lista M3U original.
 - reproducción nativa de MP3/AAC/streams;
 - reproducción HLS mediante hls.js con fallback nativo en Safari;
-- playlist pública de solo lectura;
+- playlist pública sin controles administrativos;
 - abrir, cerrar, minimizar, restaurar, play/pausa, anterior/siguiente y volumen;
 - persistencia local de volumen, última emisora y preferencia de reanudación;
 - importador local M3U, M3U8, TXT y JSON;
@@ -26,7 +28,14 @@ npm run dev
 ```bash
 npm run lint
 npm run build
+npm run build:pages
 ```
+
+## Demostración pública
+
+La carpeta `github-pages` representa un sitio institucional independiente. La demostración permite comprobar cómo Zen Radio Player permanece en primer plano sobre el contenido real de una página.
+
+El flujo `.github/workflows/pages.yml` construye y publica automáticamente esa demostración en GitHub Pages cuando cambia la rama principal.
 
 ## Alcance pendiente
 

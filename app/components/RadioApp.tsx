@@ -1,43 +1,94 @@
 "use client";
 
 import Hls from "hls.js";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { initialStations } from "../data/stations";
-import type { Diagnostic, ParsedPlaylist, PlaybackState, Station } from "../domain/player";
-import { detectStreamType, parseText } from "../lib/playlist";
+import type { PlaybackState, Station } from "../domain/player";
 
 type Visibility = "CLOSED" | "OPEN" | "MINIMIZED";
-type Surface = "PLAYER" | "EDITOR";
-const EMPTY_IMPORT: ParsedPlaylist = { stations: [], diagnostics: [] };
+type SidebarSide = "LEFT" | "RIGHT";
+const APP_VERSION = "1.0";
 
-export default function RadioApp() {
+interface RadioAppProps {
+  playlistEndpoint?: string | null;
+}
+
+function Icon({ name }: { name: "radio" | "broadcast" | "previous" | "play" | "pause" | "next" | "volume" | "mute" | "list" | "settings" | "minimize" | "close" | "search" }) {
+  const paths = {
+    radio: <><path d="M4 9h16v10H4z"/><path d="m7 9 9-5"/><circle cx="9" cy="14" r="2.5"/><path d="M15 13h2M15 16h3"/></>,
+    broadcast: <><circle cx="12" cy="12" r="1.75" fill="currentColor" stroke="none"/><path d="M8.46 8.46a5 5 0 0 0 0 7.08M15.54 8.46a5 5 0 0 1 0 7.08M5.64 5.64a9 9 0 0 0 0 12.72M18.36 5.64a9 9 0 0 1 0 12.72"/></>,
+    previous: <><path d="M6 5v14"/><path d="m18 6-9 6 9 6z"/></>,
+    play: <path d="m8 5 11 7-11 7z"/>,
+    pause: <><path d="M8 5v14M16 5v14"/></>,
+    next: <><path d="M18 5v14"/><path d="m6 6 9 6-9 6z"/></>,
+    volume: <><path d="M5 10v4h4l5 4V6l-5 4z"/><path d="M17 9a4 4 0 0 1 0 6"/></>,
+    mute: <><path d="M5 10v4h4l5 4V6l-5 4z"/><path d="m17 10 4 4M21 10l-4 4"/></>,
+    list: <><path d="M9 7h10M9 12h10M9 17h10"/><circle cx="5" cy="7" r=".5"/><circle cx="5" cy="12" r=".5"/><circle cx="5" cy="17" r=".5"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></>,
+    minimize: <path d="M6 12h12"/>,
+    close: <path d="m7 7 10 10M17 7 7 17"/>,
+    search: <><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></>,
+  };
+  return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
+}
+
+export default function RadioApp({ playlistEndpoint = "/api/playlist" }: RadioAppProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [stations, setStations] = useState<Station[]>(initialStations);
   const [selected, setSelected] = useState<Station | null>(null);
   const [playback, setPlayback] = useState<PlaybackState>("EMPTY");
   const [visibility, setVisibility] = useState<Visibility>("CLOSED");
-  const [surface, setSurface] = useState<Surface>("PLAYER");
   const [playlistOpen, setPlaylistOpen] = useState(true);
-  const [volume, setVolume] = useState(() => {
-    if (typeof window === "undefined") return 72;
-    const stored = Number(window.localStorage.getItem("zuma-player-volume"));
-    return Number.isFinite(stored) && stored >= 0 && stored <= 100 ? stored : 72;
-  });
-  const [resumeOnOpen, setResumeOnOpen] = useState(() =>
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [adminMode, setAdminMode] = useState(false);
+  const [sidebarSide] = useState<SidebarSide>(() =>
+    typeof window !== "undefined" && window.localStorage.getItem("zen-sidebar-side") === "LEFT" ? "LEFT" : "RIGHT",
+  );
+  const [volume, setVolume] = useState(50);
+  const [muted, setMuted] = useState(false);
+  const previousVolumeRef = useRef(50);
+  const [resumeOnOpen] = useState(() =>
     typeof window !== "undefined" && window.localStorage.getItem("zuma-player-resume") === "true",
   );
   const [query, setQuery] = useState("");
-  const [importMode, setImportMode] = useState<"FILE" | "URL" | "TEXT">("FILE");
-  const [directUrl, setDirectUrl] = useState("");
-  const [textInput, setTextInput] = useState("");
-  const [importResult, setImportResult] = useState<ParsedPlaylist>(EMPTY_IMPORT);
-  const [importStatus, setImportStatus] = useState("Sin análisis pendiente");
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume / 100;
-    localStorage.setItem("zuma-player-volume", String(volume));
-  }, [volume]);
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+      audioRef.current.muted = muted;
+    }
+  }, [volume, muted]);
+
+  useEffect(() => {
+    const task = window.setTimeout(() => {
+      setAdminMode(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    }, 0);
+    return () => window.clearTimeout(task);
+  }, []);
+
+  useEffect(() => {
+    if (!playlistEndpoint) return;
+    let active = true;
+    let etag = "";
+    const synchronize = async () => {
+      try {
+        const response = await fetch(playlistEndpoint, { headers: etag ? { "If-None-Match": etag } : {} });
+        if (response.status === 304) return;
+        if (!response.ok) throw new Error("Playlist unavailable");
+        const document = await response.json() as { stations?: Station[] };
+        if (!active || !Array.isArray(document.stations)) return;
+        etag = response.headers.get("etag") ?? "";
+        setStations(document.stations);
+        setSelected((current) => current ? document.stations?.find((station) => station.id === current.id) ?? null : null);
+      } catch {
+        // La copia incluida mantiene operativo el reproductor durante una caída temporal.
+      }
+    };
+    void synchronize();
+    const interval = window.setInterval(() => void synchronize(), 7000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [playlistEndpoint]);
 
   useEffect(() => () => {
     hlsRef.current?.destroy();
@@ -86,7 +137,6 @@ export default function RadioApp() {
   async function openPlayer() {
     setVisibility("OPEN");
     setPlaylistOpen(true);
-    setSurface("PLAYER");
     if (resumeOnOpen && !selected) {
       const lastId = localStorage.getItem("zuma-player-last-station");
       const last = stations.find((station) => station.id === lastId);
@@ -119,80 +169,40 @@ export default function RadioApp() {
     void selectStation(stations[index]);
   }
 
-  async function readFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setImportStatus(`Leyendo ${file.name}`);
-    const result = parseText(await file.text());
-    setImportResult(result);
-    setImportStatus(`${result.stations.length} entradas detectadas`);
-  }
-
-  function analyzeUrl() {
-    const value = directUrl.trim();
-    const diagnostics: Diagnostic[] = [];
-    try {
-      const url = new URL(value);
-      if (url.protocol !== "https:") diagnostics.push({ entry: value, status: "WARNING", message: "Se recomienda HTTPS." });
-      if (url.searchParams.has("zt")) diagnostics.push({ entry: value, status: "WARNING", message: "El enlace parece contener un token temporal." });
-      setImportResult({ stations: [{ id: "url-01", name: url.hostname, streamUrl: value, type: detectStreamType(value) }], diagnostics });
-      setImportStatus("URL válida; acceso remoto pendiente de prueba");
-    } catch {
-      setImportResult({ stations: [], diagnostics: [{ entry: value || "URL", status: "INVALID", message: "La URL no es válida." }] });
-      setImportStatus("Enlace inválido");
+  function toggleMute() {
+    if (muted || volume === 0) {
+      setMuted(false);
+      if (volume === 0) setVolume(previousVolumeRef.current || 50);
+      return;
     }
-  }
-
-  function analyzeText() {
-    const result = parseText(textInput);
-    setImportResult(result);
-    setImportStatus(`${result.stations.length} entradas detectadas`);
-  }
-
-  function applyImport() {
-    if (!importResult.stations.length || importResult.diagnostics.some((item) => item.status === "INVALID")) return;
-    setStations(importResult.stations);
-    setImportStatus(`${importResult.stations.length} entradas aplicadas a la sesión local`);
-  }
-
-  function exportJson() {
-    const blob = new Blob([JSON.stringify({ version: 1, stations }, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "playlist.json";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    previousVolumeRef.current = volume;
+    setMuted(true);
   }
 
   return (
     <main className="site-shell">
-      <header className="institution-header"><div className="seal">ZR</div><div><p className="eyebrow">Sistema personal de reproducción</p><h1>Zen Radio Player</h1></div><span className="build-label">PROTOTIPO 0.1</span></header>
-      <section className="briefing"><p className="section-code">AUDIO / EMISORAS</p><h2>Una función de radio independiente del sitio.</h2><p>Esta página representa el blog. El reproductor permanece fuera de la interfaz hasta que el usuario decide abrirlo.</p><div className="launch-actions"><button className="primary-action" onClick={() => void openPlayer()}>Abrir reproductor</button><button className="secondary-action" onClick={() => { setSurface("EDITOR"); setVisibility("OPEN"); }}>Abrir editor local</button></div></section>
-      <section className="document-grid"><article><span>01</span><h3>37 emisoras reales</h3><p>Importadas desde la playlist proporcionada.</p></article><article><span>02</span><h3>Lectura pública</h3><p>La playlist no expone operaciones de edición.</p></article><article><span>03</span><h3>Control local</h3><p>Importación y exportación permanecen en el editor.</p></article></section>
+      <header className="institution-header"><div className="seal">AC</div><div><p className="eyebrow">Sitio anfitrión de demostración</p><h1>Archivo Constitucional</h1></div></header>
+      <section className="briefing"><p className="section-code">ANÁLISIS / INSTITUCIONES</p><h2>La arquitectura del Estado también determina sus límites.</h2><p>Este contenido simula una publicación independiente. Zen Radio Player permanece superpuesto sin ocultar la lectura y solo aparece cuando el visitante decide abrirlo.</p><div className="launch-actions"><button className="primary-action" onClick={() => void openPlayer()}>Abrir reproductor</button></div></section>
+      <section className="document-grid"><article><span>01</span><h3>Constitución</h3><p>Normas, garantías y límites del poder público.</p></article><article><span>02</span><h3>Instituciones</h3><p>Competencias, controles y separación de poderes.</p></article><article><span>03</span><h3>Soberanía</h3><p>El ciudadano como origen de la autoridad política.</p></article></section>
 
       <audio ref={audioRef} onPlaying={() => setPlayback("PLAYING")} onPause={() => selected && setPlayback("PAUSED")} onWaiting={() => setPlayback("BUFFERING")} onError={() => setPlayback("ERROR")} />
 
-      {visibility === "MINIMIZED" && <div className="mini-player"><span className={`status-dot ${playback === "PLAYING" ? "active" : ""}`} /><span>{selected?.name || "Radio"}</span><button onClick={() => setVisibility("OPEN")}>Restaurar</button><button onClick={closePlayer} aria-label="Cerrar">×</button></div>}
+      {visibility === "MINIMIZED" && <button className="mini-player" onClick={() => setVisibility("OPEN")} aria-label="Restaurar reproductor"><span className={`mini-status ${playback === "PLAYING" ? "active" : ""}`}><Icon name="broadcast" /></span><span>{selected?.name || "Zen Radio Player"}</span></button>}
 
-      {visibility === "OPEN" && <section className="player-window">
-        <nav className="surface-tabs"><button className={surface === "PLAYER" ? "active" : ""} onClick={() => setSurface("PLAYER")}>Reproductor</button><button className={surface === "EDITOR" ? "active" : ""} onClick={() => setSurface("EDITOR")}>Editor local</button><span className="window-spacer" /><button onClick={() => setVisibility("MINIMIZED")} aria-label="Minimizar">—</button><button onClick={closePlayer} aria-label="Cerrar">×</button></nav>
+      {visibility === "OPEN" && <section className={`player-system side-${sidebarSide.toLowerCase()}`}>
+        {aboutOpen && <aside id="zen-radio-about" className="about-card" aria-label="Acerca de Zen Radio Player">
+          <button className="about-close" onClick={() => setAboutOpen(false)} aria-label="Cerrar información"><Icon name="close" /></button>
+          <header className="about-card-header"><div className="about-brand"><small>APLICACIÓN</small><strong>Zen Radio Player</strong></div><span className="about-version">Versión {APP_VERSION}</span></header>
+          <section className="about-section"><small>PROPÓSITO</small><p><strong>Zen Radio Player</strong> es un reproductor web diseñado para integrarse con cualquier sitio. Permanece en primer plano sin ocultar su contenido: la lista puede cerrarse, la barra puede minimizarse y el reproductor puede cerrarse por completo.</p></section>
+          <footer className="about-footer"><span className="creator-credit">Creado por: <a href="https://github.com/devMod3" target="_blank" rel="noreferrer">devMod3</a></span><a className="sponsor-link" href="https://movimientoc40.com" target="_blank" rel="noreferrer">Sponsor</a></footer>
+        </aside>}
+        {playlistOpen && <aside className="playlist-panel"><div className="playlist-header"><div><strong>Lista de reproducción</strong><span>{visibleStations.length} emisoras</span></div>{adminMode && <div className="playlist-access"><button onClick={() => window.open("http://127.0.0.1:4174", "zen-radio-admin")}><Icon name="settings" /><span>Administrar</span></button></div>}</div><label className="search-field"><Icon name="search" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar emisora" /></label><div className="station-list">{visibleStations.map((station) => <button key={station.id} className={selected?.id === station.id ? "selected" : ""} onClick={() => void selectStation(station)} title={station.name}><span>{station.name}</span><small>{station.type}</small></button>)}</div></aside>}
 
-        {surface === "PLAYER" ? <div className={`player-layout ${playlistOpen ? "with-playlist" : ""}`}>
-          <div className="player-main"><div className="signal-line"><span className={`status-dot ${playback === "PLAYING" ? "active" : ""}`} /><strong>{playback === "PLAYING" ? "EN DIRECTO" : playback}</strong><span>{selected?.type || "SIN FUENTE"}</span><span className="signal-note">Metadatos: pendiente de verificación</span></div>
-            <div className="transport-line"><div className="station-identity"><div className="station-mark">ZR</div><div><strong>{selected?.name || "Seleccione una emisora"}</strong><span>{selected ? "Información del programa pendiente" : "La playlist está preparada"}</span></div></div>
-              <div className="transport-controls"><button onClick={() => nextStation(-1)}>Anterior</button><button className="play-control" onClick={() => void togglePlayback()} disabled={!selected}>{playback === "PLAYING" ? "Pausa" : "Reproducir"}</button><button onClick={() => nextStation(1)}>Siguiente</button></div>
-              <div className="volume-control"><label htmlFor="volume">Volumen {volume}</label><input id="volume" type="range" min="0" max="100" value={volume} onChange={(event) => setVolume(Number(event.target.value))} /><button onClick={() => setPlaylistOpen((value) => !value)}>{playlistOpen ? "Ocultar lista" : "Mostrar lista"}</button></div></div>
-            <div className="preference-line"><label><input type="checkbox" checked={resumeOnOpen} onChange={(event) => { setResumeOnOpen(event.target.checked); localStorage.setItem("zuma-player-resume", String(event.target.checked)); }} /> Continuar la última emisora al abrir</label>{playback === "ERROR" && <button onClick={() => selected && void selectStation(selected)}>Reintentar conexión</button>}</div></div>
-          {playlistOpen && <aside className="playlist-panel"><div className="playlist-header"><div><strong>Emisoras</strong><span>{visibleStations.length} disponibles</span></div><span className="read-badge">LECTURA</span></div><label className="search-field"><span>Buscar</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre de emisora" /></label><div className="station-list">{visibleStations.map((station) => <button key={station.id} className={selected?.id === station.id ? "selected" : ""} onClick={() => void selectStation(station)}><span>{station.name}</span><small>{station.type}</small></button>)}</div></aside>}
-        </div> : <div className="editor-surface">
-          <header className="editor-header"><div><strong>Editor privado de playlist</strong><span>Cambios locales y bajo confirmación</span></div><span className="admin-badge">ADMINISTRADOR</span></header>
-          <div className="import-tabs">{(["FILE", "URL", "TEXT"] as const).map((mode) => <button key={mode} className={importMode === mode ? "active" : ""} onClick={() => setImportMode(mode)}>{mode === "FILE" ? "Archivo" : mode === "URL" ? "Enlace directo" : "Texto pegado"}</button>)}<button disabled>Nube · futuro</button></div>
-          <div className="import-input">{importMode === "FILE" && <label><span>M3U, M3U8, TXT o JSON</span><input type="file" accept=".m3u,.m3u8,.txt,.json" onChange={(event) => void readFile(event)} /></label>}{importMode === "URL" && <><label><span>Stream o playlist remota</span><input type="url" value={directUrl} onChange={(event) => setDirectUrl(event.target.value)} placeholder="https://servidor/stream" /></label><button className="primary-action" onClick={analyzeUrl}>Revisar enlace</button></>}{importMode === "TEXT" && <><label><span>URLs, M3U o JSON</span><textarea value={textInput} onChange={(event) => setTextInput(event.target.value)} rows={4} /></label><button className="primary-action" onClick={analyzeText}>Analizar texto</button></>}</div>
-          <div className="review-header"><div><strong>Revisión previa</strong><span>{importStatus}</span></div><span className="read-badge">SIN CAMBIOS AUTOMÁTICOS</span></div>
-          <div className="review-table-wrap"><table className="review-table"><thead><tr><th>Entrada</th><th>Tipo</th><th>Estado</th><th>Sugerencia</th></tr></thead><tbody>{(importResult.stations.length ? importResult.stations.slice(0, 6) : stations.slice(0, 4)).map((station) => { const issue = importResult.diagnostics.find((item) => item.entry === station.name || item.entry === station.id); return <tr key={station.id}><td>{station.name}</td><td>{station.type}</td><td>{issue?.status || "VALID"}</td><td>{issue?.message || "Lista para utilizar"}</td></tr>; })}</tbody></table></div>
-          <footer className="editor-actions"><span>Original preservado · {stations.length} emisoras en la sesión</span><div><button onClick={applyImport} disabled={!importResult.stations.length}>Aplicar importación</button><button className="primary-action" onClick={exportJson}>Exportar JSON</button></div></footer>
-        </div>}
+        <div className="player-bar">
+          <div className="station-identity"><span className={`broadcast-status ${playback === "PLAYING" ? "active" : ""}`}><Icon name="broadcast" /></span><div className="station-scroll"><strong>{selected?.name || "Seleccione una emisora"}</strong></div></div>
+          <div className="transport-controls"><button onClick={() => nextStation(-1)} aria-label="Emisora anterior" title="Anterior"><Icon name="previous" /></button><button className="play-control" onClick={() => void togglePlayback()} disabled={!selected} aria-label={playback === "PLAYING" ? "Pausar" : "Reproducir"} title={playback === "PLAYING" ? "Pausar" : "Reproducir"}><Icon name={playback === "PLAYING" ? "pause" : "play"} /></button><button onClick={() => nextStation(1)} aria-label="Emisora siguiente" title="Siguiente"><Icon name="next" /></button></div>
+          <div className="player-tools"><button onClick={toggleMute} aria-label={muted || volume === 0 ? "Activar sonido" : "Silenciar"} title={muted || volume === 0 ? "Activar sonido" : "Silenciar"}><Icon name={muted || volume === 0 ? "mute" : "volume"} /></button><label className="volume-control" title={`Volumen ${muted ? 0 : volume}%`}><input aria-label="Volumen" type="range" min="0" max="100" value={volume} onChange={(event) => { const value = Number(event.target.value); setVolume(value); setMuted(false); if (value > 0) previousVolumeRef.current = value; }} /></label><button className={`playlist-toggle${playlistOpen ? " active" : ""}`} onClick={() => setPlaylistOpen((value) => !value)} aria-label="Lista de reproducción" aria-pressed={playlistOpen} title="Lista de reproducción"><Icon name="list" /></button><button className="about-trigger" onClick={() => setAboutOpen((value) => !value)} aria-expanded={aboutOpen} aria-controls="zen-radio-about">Zen Radio Player</button><button onClick={() => setVisibility("MINIMIZED")} aria-label="Minimizar" title="Minimizar"><Icon name="minimize" /></button><button onClick={closePlayer} aria-label="Cerrar" title="Cerrar"><Icon name="close" /></button></div>
+        </div>
       </section>}
     </main>
   );
