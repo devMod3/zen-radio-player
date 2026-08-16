@@ -10,7 +10,7 @@
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vite",
     "admin": "python3 zen_admin.py",
     "build": "bash scripts/build-verified.sh",
-    "build:embed": "vite build --config vite.embed.config.ts",
+    "build:embed": "vite build --config vite.embed.config.ts && node scripts/validate-embed.mjs",
     "build:pages": "vite build --config vite.pages.config.ts && npm run build:embed",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --test tests/*.test.mjs",

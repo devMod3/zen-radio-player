@@ -6,6 +6,8 @@ const player = await readFile(new URL("../app/components/ZenRadioPlayer.tsx", im
 const demo = await readFile(new URL("../app/components/RadioApp.tsx", import.meta.url), "utf8");
 const styles = await readFile(new URL("../app/player.css", import.meta.url), "utf8");
 const embed = await readFile(new URL("../embed/main.tsx", import.meta.url), "utf8");
+const embedConfig = await readFile(new URL("../vite.embed.config.ts", import.meta.url), "utf8");
+const embedValidator = await readFile(new URL("../scripts/validate-embed.mjs", import.meta.url), "utf8");
 const pages = await readFile(new URL("../github-pages/index.html", import.meta.url), "utf8");
 const api = await readFile(new URL("../app/api/playlist/route.ts", import.meta.url), "utf8");
 
@@ -80,6 +82,13 @@ test("opens from Blogger page-list links without coupling to its template", () =
   assert.match(embed, /url\.origin === window\.location\.origin && url\.hash === OPEN_HASH/);
   assert.match(embed, /window\.addEventListener\("hashchange", openFromHash\)/);
   assert.match(embed, /window\.location\.hash === OPEN_HASH\) window\.setTimeout\(openFromHash, 0\)/);
+});
+
+test("builds a browser-only embed and rejects Node runtime dependencies", () => {
+  assert.match(embedConfig, /"process\.env\.NODE_ENV": JSON\.stringify\("production"\)/);
+  assert.match(embedValidator, /!\/\\bprocess\\\.env\\b\/\.test\(bundle\)/);
+  assert.match(embedValidator, /bundle\.includes\("data-zen-radio-open"\)/);
+  assert.match(embedValidator, /bundle\.includes\("#zen-radio-player"\)/);
 });
 
 test("allows read-only playlist synchronization from external sites", () => {

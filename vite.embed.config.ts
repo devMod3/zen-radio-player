@@ -4,6 +4,9 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   publicDir: false,
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  },
   build: {
     outDir: "dist-pages/assets",
     emptyOutDir: false,
