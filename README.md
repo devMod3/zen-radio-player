@@ -37,9 +37,20 @@ La carpeta `github-pages` representa un sitio institucional independiente. La de
 
 El flujo `.github/workflows/pages.yml` construye y publica automáticamente esa demostración en GitHub Pages cuando cambia la rama principal.
 
+## Integración en Blogger
+
+La demostración y Blogger cargan el mismo Web Component aislado mediante Shadow DOM. El aislamiento evita que los estilos del reproductor modifiquen la plantilla del blog y que la plantilla modifique el reproductor.
+
+```html
+<button type="button" data-zen-radio-open>Abrir reproductor</button>
+<script type="module" src="https://devmod3.github.io/zen-radio-player/assets/zen-radio-player.js"></script>
+```
+
+También puede abrirse desde cualquier botón existente mediante `window.ZenRadioPlayer.open()`.
+
 ## Alcance pendiente
 
 - lectura y normalización completa de metadatos HLS/ID3/ICY;
 - verificación remota de Content-Type, CORS y vencimiento;
-- paquete Web Component autónomo para inyección definitiva en Blogger;
+- reducción adicional del peso del paquete embebible;
 - almacenamiento de archivos en nube.
