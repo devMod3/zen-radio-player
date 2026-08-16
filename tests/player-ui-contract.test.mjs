@@ -15,8 +15,9 @@ test("publishes the stable product identity in the about surface", () => {
   assert.match(player, /Creado por: <a href="https:\/\/github\.com\/devMod3"[^>]*>devMod3<\/a>/);
   assert.match(player, /href="https:\/\/movimientoc40\.com"[^>]*>Sponsor<\/a>/);
   assert.match(player, /Zen Radio Player<\/strong> es un reproductor web diseñado para integrarse con cualquier sitio\./);
-  assert.doesNotMatch(player, /Código fuente en GitHub|PROTOTIPO 0\.1/);
-  assert.match(styles, /\.creator-credit a,\.about-footer \.sponsor-link \{[^}]*text-decoration:none;[^}]*cursor:pointer;/);
+  assert.doesNotMatch(player, /Permanece en primer plano|Código fuente en GitHub|PROTOTIPO 0\.1/);
+  assert.match(styles, /\.creator-credit a,\.about-footer \.sponsor-link \{[^}]*font-weight:650;[^}]*letter-spacing:\.02em;[^}]*text-decoration:none;[^}]*cursor:pointer;/);
+  assert.doesNotMatch(styles, /\n\.about-footer \.sponsor-link \{/);
   assert.doesNotMatch(styles, /sponsor-link:hover[^}]*text-decoration:underline/);
 });
 
@@ -29,7 +30,18 @@ test("keeps the product independent from the host demonstration", () => {
 
 test("keeps the broadcast glyph and its container geometrically centered", () => {
   assert.match(player, /broadcast: <><circle cx="12" cy="12"[^>]*fill="currentColor"[^>]*\/><path d="M8\.46 8\.46[^"]*M15\.54 8\.46[^"]*M5\.64 5\.64[^"]*M18\.36 5\.64/);
-  assert.match(styles, /\.broadcast-status \{[^}]*display:inline-flex!important;[^}]*align-items:center;[^}]*justify-content:center;[^}]*margin:0!important;[^}]*transform:translateY\(-3px\);/);
+  assert.match(styles, /\.player-bar>\* \{ align-self:center; \}/);
+  assert.match(styles, /\.station-identity \{[^}]*height:28px;[^}]*align-items:center;/);
+  assert.match(styles, /\.broadcast-status \{[^}]*display:inline-flex!important;[^}]*align-items:center;[^}]*justify-content:center;[^}]*margin:0!important;[^}]*transform:none;/);
+  assert.match(styles, /\.transport-controls,\.player-tools \{[^}]*height:28px;[^}]*align-items:center;/);
+});
+
+test("keeps the playlist search compact and self-contained", () => {
+  assert.match(player, /<label className="search-field"><Icon name="search" \/><input aria-label="Buscar emisora"/);
+  assert.match(player, /placeholder="Buscar emisora" \/><\/label>/);
+  assert.match(styles, /\.search-field \{[^}]*position:relative;[^}]*display:block;[^}]*margin:5px 7px;/);
+  assert.match(styles, /\.search-field \.ui-icon \{[^}]*position:absolute;[^}]*top:50%;[^}]*left:8px;[^}]*transform:translateY\(-50%\);/);
+  assert.match(styles, /\.search-field input \{[^}]*width:100%;[^}]*height:26px;[^}]*padding:3px 7px 3px 27px;/);
 });
 
 test("uses compact rectangular controls without circular button frames", () => {
