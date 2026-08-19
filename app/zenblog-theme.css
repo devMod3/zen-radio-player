@@ -1,0 +1,51 @@
+:host([data-theme="zenblog"]) .zen-radio-root {
+  --zen-ink: var(--zrp-host-text, #f1f0eb);
+  --zen-muted: var(--zrp-host-text-secondary, #b4b6b8);
+  --zen-line: var(--zrp-host-border, #2d3338);
+  --zen-line-strong: var(--zrp-host-border-strong, #434a50);
+  --zen-surface: var(--zrp-host-surface-1, #171a1d);
+  --zen-panel: var(--zrp-host-surface-2, #1d2125);
+  --zen-accent: var(--zrp-host-accent, #c5ae7a);
+  --zen-accent-strong: var(--zrp-host-accent, #c5ae7a);
+  --zen-live: var(--zrp-host-live, #d16f72);
+  --zen-live-muted: #8f5557;
+  --zen-copy: var(--zrp-host-text-secondary, #b4b6b8);
+  --zen-bar: var(--zrp-host-canvas, #121416);
+  --zen-sub: var(--zrp-host-surface-1, #171a1d);
+  --zen-input: var(--zrp-host-canvas, #121416);
+  --zen-hover: var(--zrp-host-surface-3, #24292e);
+  --zen-selected: var(--zrp-host-surface-2, #1d2125);
+  --zen-control-hover: rgba(197, 174, 122, .10);
+  --zen-control-active: rgba(197, 174, 122, .16);
+  --zen-on-accent: var(--zrp-host-canvas, #121416);
+  font-family: var(--zrp-host-ui-font, "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+}
+
+:host([data-theme="zenblog"]) .transport-controls button,
+:host([data-theme="zenblog"]) .player-tools > button,
+:host([data-theme="zenblog"]) .playlist-access > button,
+:host([data-theme="zenblog"]) .search-field input,
+:host([data-theme="zenblog"]) .about-card,
+:host([data-theme="zenblog"]) .about-close,
+:host([data-theme="zenblog"]) .mini-player {
+  border-radius: 0;
+}
+
+:host([data-theme="zenblog"]) .about-brand strong {
+  font-family: var(--zrp-host-editorial-font, "Source Serif 4", Georgia, serif);
+  font-weight: 560;
+}
+
+:host([data-theme="zenblog"]) .transport-controls .play-control {
+  border: 1px solid var(--zen-accent);
+  background: var(--zen-accent);
+}
+
+:host([data-theme="zenblog"]) .playlist-panel,
+:host([data-theme="zenblog"]) .about-card {
+  box-shadow: 0 14px 42px rgba(0, 0, 0, .28);
+}
+
+:host([data-theme="zenblog"]) .station-list button.selected {
+  box-shadow: inset 2px 0 var(--zen-accent);
+}
