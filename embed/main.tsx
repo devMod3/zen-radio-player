@@ -77,7 +77,7 @@ function bootstrap() {
   });
   window.addEventListener("hashchange", openFromHash);
   if (window.location.hash === OPEN_HASH) window.setTimeout(openFromHash, 0);
-  window.ZenRadioPlayer = Object.freeze({ version: "1.0", open: openPlayer });
+  window.ZenRadioPlayer = Object.freeze({ version: "1.0.1", open: openPlayer });
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
