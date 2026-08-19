@@ -41,7 +41,7 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
   const [selected, setSelected] = useState<Station | null>(null);
   const [playback, setPlayback] = useState<PlaybackState>("EMPTY");
   const [visibility, setVisibility] = useState<Visibility>("CLOSED");
-  const [playlistOpen, setPlaylistOpen] = useState(true);
+  const [playlistOpen, setPlaylistOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [adminMode, setAdminMode] = useState(false);
   const [sidebarSide] = useState<SidebarSide>(() =>
@@ -55,7 +55,6 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
   useEffect(() => {
     const open = () => {
       setVisibility("OPEN");
-      setPlaylistOpen(true);
     };
     window.addEventListener(ZEN_PLAYER_OPEN_EVENT, open);
     return () => window.removeEventListener(ZEN_PLAYER_OPEN_EVENT, open);
