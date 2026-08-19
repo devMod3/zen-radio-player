@@ -7,7 +7,7 @@ import type { PlaybackState, Station } from "../domain/player";
 
 type Visibility = "CLOSED" | "OPEN" | "MINIMIZED";
 type SidebarSide = "LEFT" | "RIGHT";
-const APP_VERSION = "1.0";
+const APP_VERSION = "1.0.1";
 
 export const ZEN_PLAYER_OPEN_EVENT = "zen-radio-player:open";
 
@@ -54,6 +54,7 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
 
   useEffect(() => {
     const open = () => {
+      setPlaylistOpen(false);
       setVisibility("OPEN");
     };
     window.addEventListener(ZEN_PLAYER_OPEN_EVENT, open);
@@ -148,6 +149,7 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
     releaseCurrentSource();
     setSelected(null);
     setPlayback("EMPTY");
+    setPlaylistOpen(false);
     setVisibility("CLOSED");
   }
 
