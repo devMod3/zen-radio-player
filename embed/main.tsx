@@ -1,6 +1,7 @@
 import { createRoot, type Root } from "react-dom/client";
 import ZenRadioPlayer, { ZEN_PLAYER_OPEN_EVENT } from "../app/components/ZenRadioPlayer";
 import playerCss from "../app/player.css?inline";
+import zenBlogThemeCss from "../app/zenblog-theme.css?inline";
 
 const ELEMENT_NAME = "zen-radio-player";
 const OPEN_HASH = "#zen-radio-player";
@@ -38,7 +39,7 @@ class ZenRadioPlayerElement extends HTMLElement {
     if (this.reactRoot) return;
     const shadow = this.shadowRoot ?? this.attachShadow({ mode: "open" });
     const style = document.createElement("style");
-    style.textContent = playerCss;
+    style.textContent = `${playerCss}\n${zenBlogThemeCss}`;
     const mountPoint = document.createElement("div");
     shadow.replaceChildren(style, mountPoint);
     this.reactRoot = createRoot(mountPoint);
