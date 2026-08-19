@@ -111,7 +111,7 @@ function bootstrap() {
   document.addEventListener("zenblog:ready", () => syncZenBlogTheme(getOrCreatePlayer()));
   window.addEventListener("hashchange", openFromHash);
   if (window.location.hash === OPEN_HASH) window.setTimeout(openFromHash, 0);
-  window.ZenRadioPlayer = Object.freeze({ version: "1.0.2", open: openPlayer });
+  window.ZenRadioPlayer = Object.freeze({ version: "1.0.3", open: openPlayer });
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootstrap, { once: true });
