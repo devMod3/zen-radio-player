@@ -7,7 +7,7 @@ import type { PlaybackState, Station } from "../domain/player";
 
 type Visibility = "CLOSED" | "OPEN" | "MINIMIZED";
 type SidebarSide = "LEFT" | "RIGHT";
-const APP_VERSION = "1.0.1";
+const APP_VERSION = "1.0.3";
 
 export const ZEN_PLAYER_OPEN_EVENT = "zen-radio-player:open";
 
