@@ -119,7 +119,6 @@
 @media(max-width:560px){
   .player-bar{grid-template-columns:minmax(72px,1fr) auto auto}
   .volume-control{display:none}
-  .player-tools>button:nth-last-of-type(2){display:none}
   .transport-controls button,.player-tools>button{padding-inline:5px}
   .station-scroll:hover strong{animation:none}
 }
