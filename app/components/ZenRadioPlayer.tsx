@@ -1,13 +1,13 @@
 "use client";
 
 import type HlsInstance from "hls.js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { initialStations } from "../data/stations";
 import type { PlaybackState, Station } from "../domain/player";
 
 type Visibility = "CLOSED" | "OPEN" | "MINIMIZED";
 type SidebarSide = "LEFT" | "RIGHT";
-const APP_VERSION = "1.0.3";
+const APP_VERSION = "1.0.4";
 
 export const ZEN_PLAYER_OPEN_EVENT = "zen-radio-player:open";
 
@@ -51,15 +51,6 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
   const [muted, setMuted] = useState(false);
   const previousVolumeRef = useRef(50);
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    const open = () => {
-      setPlaylistOpen(false);
-      setVisibility("OPEN");
-    };
-    window.addEventListener(ZEN_PLAYER_OPEN_EVENT, open);
-    return () => window.removeEventListener(ZEN_PLAYER_OPEN_EVENT, open);
-  }, []);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -108,7 +99,7 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
     return normalized ? stations.filter((station) => station.name.toLocaleLowerCase().includes(normalized)) : stations;
   }, [query, stations]);
 
-  function releaseCurrentSource() {
+  const releaseCurrentSource = useCallback(() => {
     hlsRef.current?.destroy();
     hlsRef.current = null;
     const audio = audioRef.current;
@@ -116,9 +107,9 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
-  }
+  }, []);
 
-  async function selectStation(station: Station) {
+  const selectStation = useCallback(async (station: Station) => {
     const audio = audioRef.current;
     if (!audio) return;
     releaseCurrentSource();
@@ -143,7 +134,18 @@ export default function ZenRadioPlayer({ playlistEndpoint = "/api/playlist" }: Z
     } catch {
       setPlayback("ERROR");
     }
-  }
+  }, [releaseCurrentSource]);
+
+  useEffect(() => {
+    const open = () => {
+      setPlaylistOpen(false);
+      setAboutOpen(false);
+      setVisibility("MINIMIZED");
+      if (!selected && stations.length) void selectStation(stations[0]);
+    };
+    window.addEventListener(ZEN_PLAYER_OPEN_EVENT, open);
+    return () => window.removeEventListener(ZEN_PLAYER_OPEN_EVENT, open);
+  }, [selected, selectStation, stations]);
 
   function closePlayer() {
     releaseCurrentSource();
