@@ -19,6 +19,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Normalize script permissions
+        run: chmod +x scripts/*.sh
       - name: Install dependencies
         run: npm ci
       - name: Lint
