@@ -9,6 +9,7 @@ test("public open starts minimized and auto-selects the first current station", 
   assert.match(openEffect, /setPlaylistOpen\(false\)/);
   assert.match(openEffect, /setAboutOpen\(false\)/);
   assert.match(openEffect, /setVisibility\("MINIMIZED"\)/);
+  assert.doesNotMatch(openEffect, /setVisibility\("OPEN"\)/);
   assert.match(openEffect, /if \(!selected && stations\.length\) void selectStation\(stations\[0\]\)/);
 });
 
