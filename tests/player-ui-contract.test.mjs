@@ -12,7 +12,7 @@ const pages = await readFile(new URL("../github-pages/index.html", import.meta.u
 const api = await readFile(new URL("../app/api/playlist/route.ts", import.meta.url), "utf8");
 
 test("publishes the stable product identity in the about surface", () => {
-  assert.match(player, /const APP_VERSION = "1\.0"/);
+  assert.match(player, /const APP_VERSION = "1\.0\.3"/);
   assert.match(player, /Versión \{APP_VERSION\}/);
   assert.match(player, /Creado por: <a href="https:\/\/github\.com\/devMod3"[^>]*>devMod3<\/a>/);
   assert.match(player, /href="https:\/\/movimientoc40\.com"[^>]*>Sponsor<\/a>/);
@@ -55,7 +55,7 @@ test("uses compact rectangular controls without circular button frames", () => {
 
 test("keeps playlist icon-only and removes redundant reading state", () => {
   assert.match(player, /aria-label="Lista de reproducción" aria-pressed=\{playlistOpen\} title="Lista de reproducción"/);
-  assert.doesNotMatch(player, /<span>Lista de reproducción<\/span>|>LECTURA</);
+  assert.doesNotMatch(player, /<span>Lista de reproducción<\/span>|>LECTURA/);
   assert.doesNotMatch(styles, /read-badge/);
 });
 
@@ -70,7 +70,7 @@ test("builds the reusable Blogger surface as an isolated custom element", () => 
   assert.match(embed, /attachShadow\(\{ mode: "open" \}\)/);
   assert.match(embed, /style\.textContent = playerCss/);
   assert.match(embed, /target\.closest<HTMLElement>\("\[data-zen-radio-open\], a\[href\]"\)/);
-  assert.match(embed, /window\.ZenRadioPlayer = Object\.freeze\(\{ version: "1\.0", open: openPlayer \}\)/);
+  assert.match(embed, /window\.ZenRadioPlayer = Object\.freeze\(\{ version: "1\.0\.3", open: openPlayer \}\)/);
   assert.match(pages, /data-zen-radio-open/);
   assert.match(pages, /src="https:\/\/devmod3\.github\.io\/zen-radio-player\/assets\/zen-radio-player\.js"/);
   assert.doesNotMatch(pages, /main\.tsx|id="root"/);
