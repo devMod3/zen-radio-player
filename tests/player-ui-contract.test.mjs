@@ -68,7 +68,7 @@ test("ships one official dark appearance without experimental palettes", () => {
 test("builds the reusable Blogger surface as an isolated custom element", () => {
   assert.match(embed, /const ELEMENT_NAME = "zen-radio-player"/);
   assert.match(embed, /attachShadow\(\{ mode: "open" \}\)/);
-  assert.match(embed, /style\.textContent = playerCss/);
+  assert.match(embed, /style\.textContent = `\$\{playerCss\}\\n\$\{zenBlogThemeCss\}`/);
   assert.match(embed, /target\.closest<HTMLElement>\("\[data-zen-radio-open\], a\[href\]"\)/);
   assert.match(embed, /window\.ZenRadioPlayer = Object\.freeze\(\{ version: "1\.0\.4", open: openPlayer \}\)/);
   assert.match(pages, /data-zen-radio-open/);
